@@ -26,8 +26,8 @@ app.use(morgan("dev"));
 
 //routes
 
-readdirSync("./routes").map((route) => {
-  app.use("/api", require(`./routes/${route}`));
+readdirSync("./routes").map((r) => {
+  app.use("/api", require(`./routes/${r}`));
 });
 
 //port
