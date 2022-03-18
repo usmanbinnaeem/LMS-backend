@@ -17,5 +17,5 @@ export const hashPassword = (password) => {
 };
 
 export const comparePassword = (password, hashedPassword) => {
-  return bcrypt.compare(password, hashedPassword);
+  return bcrypt.compare(password, hashedPassword); // boolean
 };
