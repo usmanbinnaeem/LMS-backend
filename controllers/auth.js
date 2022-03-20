@@ -1,14 +1,14 @@
 import User from "../models/user";
 import { hashPassword, comparePassword } from "../utils/auth";
 import jwt from "jsonwebtoken";
-import AWS from 'aws-sdk';
+import AWS from "aws-sdk";
 
 const awsConfig = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccesskey: process.env.AWS_SEC_ACCESS_KEY,
   region: process.env.AWS_REGION,
-  apiVersion: process.env.AWS_API_VERSION,
-}
+  // apiVersion: process.env.AWS_API_VERSION,
+};
 
 const SES = new AWS.SES(awsConfig);
 
@@ -105,7 +105,39 @@ export const currentUser = async (req, res) => {
 };
 
 export const sendTestEmail = async (req, res) => {
-    // console.log("Sending email using ses");
-    // return res.json({ ok: true });
-    
-}
+  // console.log("Sending email using ses");
+  // return res.json({ ok: true });
+  const params = {
+    Source: process.env.EMAIL_FROM,
+    Destination: {
+      ToAddresses: ["utanoli689@gmail.com"],
+    },
+    ReplyToAddresses: [process.env.EMAIL_FROM],
+    Message: {
+      Body: {
+        Html: {
+          Charset: "UTF-8",
+          Data: `
+            <html>
+            <h1>Reset Password Link</h1>
+            <p>Please use the following link to reset your Password</p>
+            </html>
+            `,
+        },
+      },
+      Subject: {
+        Charset: "UTF-8",
+        Data: "LMS Password Reset Link",
+      },
+    },
+  };
+  const emailSent = SES.sendEmail(params).promise();
+  emailSent
+    .then((data) => {
+      console.log(data);
+      res.json({ ok: true });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
