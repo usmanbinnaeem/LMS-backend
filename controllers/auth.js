@@ -2,6 +2,7 @@ import User from "../models/user";
 import { hashPassword, comparePassword } from "../utils/auth";
 import jwt from "jsonwebtoken";
 import AWS from "aws-sdk";
+import { nanoid } from "nanoid";
 
 const awsConfig = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -103,41 +104,81 @@ export const currentUser = async (req, res) => {
     console.log(err);
   }
 };
+export const forgotPassword = async (req, res) => {
+  try {
+    const { values } = req.body;
+    const { email } = values;
+    // console.log("email recieved on server", email);
+    const shortCode = nanoid(6).toUpperCase();
+    const user = await User.findOneAndUpdate(
+      { email },
+      { passwordResetCode: shortCode }
+    );
+    if (!user) {
+      res.status(400).send("No User Found! Please enter Valid Email Address");
+    }
 
-export const sendTestEmail = async (req, res) => {
-  // console.log("Sending email using ses");
-  // return res.json({ ok: true });
-  const params = {
-    Source: process.env.EMAIL_FROM,
-    Destination: {
-      ToAddresses: ["utanoli689@gmail.com"],
-    },
-    ReplyToAddresses: [process.env.EMAIL_FROM],
-    Message: {
-      Body: {
-        Html: {
+    const params = {
+      Source: process.env.EMAIL_FROM,
+      Destination: {
+        ToAddresses: [email],
+      },
+      ReplyToAddresses: [process.env.EMAIL_FROM],
+      Message: {
+        Body: {
+          Html: {
+            Charset: "UTF-8",
+            Data: `
+              <html>
+              <h1>Reset Password Link</h1>
+              <p>Use this Code to reset your Password</p>
+              <h2 style="color: red;">${shortCode}</h2>
+              <i>lms.com</i>
+              </html>
+              `,
+          },
+        },
+        Subject: {
           Charset: "UTF-8",
-          Data: `
-            <html>
-            <h1>Reset Password Link</h1>
-            <p>Please use the following link to reset your Password</p>
-            </html>
-            `,
+          Data: "LMS Reset Password",
         },
       },
-      Subject: {
-        Charset: "UTF-8",
-        Data: "LMS Password Reset Link",
+    };
+    const emailSent = SES.sendEmail(params).promise();
+    emailSent
+      .then((data) => {
+        console.log(data);
+        res.json({ ok: true });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { values } = req.body;
+    const { email, code, newPassword } = values;
+    // console.table({email, code, newPassword});
+
+    // Hash Password
+    const hashedPassword = await hashPassword(newPassword);
+    const user = await User.findOneAndUpdate(
+      {
+        email,
+        passwordResetCode: code,
       },
-    },
-  };
-  const emailSent = SES.sendEmail(params).promise();
-  emailSent
-    .then((data) => {
-      console.log(data);
-      res.json({ ok: true });
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+      {
+        password: hashedPassword,
+        passwordResetCode: "",
+      }
+    ).exec();
+    res.json({ ok: true });
+  } catch (err) {
+    console.log(err);
+    res.status(400).send("Error. Try again");
+  }
 };
