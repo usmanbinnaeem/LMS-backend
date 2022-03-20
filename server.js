@@ -1,15 +1,18 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 const morgan = require("morgan");
 import mongoose from "mongoose";
+import csrf from "csurf";
 require("dotenv").config();
 import { readdirSync } from "fs";
 
-//express app
+const csrfProtection = csrf({ cookie: true });
+
+// express app
 const app = express();
 
-//database connection
-
+// database connection
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -22,16 +25,21 @@ mongoose
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 app.use(morgan("dev"));
 
-//routes
-
+// routes
 readdirSync("./routes").map((r) => {
   app.use("/api", require(`./routes/${r}`));
 });
 
-//port
+// csrf
+app.use(csrfProtection);
 
+app.get("/api/csrf-token", (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+// port
 const port = process.env.PORT || 8000;
 
 app.listen(port, () => {
