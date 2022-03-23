@@ -43,12 +43,28 @@ export const getAccountStatus = async (req, res) => {
           $addToSet: { role: "Instructor" },
         },
         { new: true }
-      ).exec();
-      statusUpdated.password = undefined;
+      )
+        .select("-password")
+        .exec();
+      // statusUpdated.password = undefined;
       res.json(statusUpdated);
     }
   } catch (err) {
     console.log("Get Account Status Error", err);
     return res.status(400).send("Error, try again");
+  }
+};
+
+export const currentInstructor = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password").exec();
+    if (!user.role.includes("Instructor")) {
+      return res.sendStatus(403);
+    } else {
+      return res.json({ ok: true });
+    }
+    // console.log("current user", user);
+  } catch (err) {
+    console.log(err);
   }
 };
