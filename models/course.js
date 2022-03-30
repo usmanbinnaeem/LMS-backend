@@ -46,8 +46,8 @@ const courseSchema = new Schema({
     required: true,
   },
   price: {
-    type: Number,
-    default: 9.99,
+    type: String,
+    default: "9.99",
   },
   image: {},
   category: String,
