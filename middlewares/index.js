@@ -11,7 +11,7 @@ export const isInstructor = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).exec();
     if (!user.role.includes("Instructor")) {
-      return sendStatus(403);
+      return res.sendStatus(403);
     } else {
       next();
     }

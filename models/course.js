@@ -65,6 +65,6 @@ const courseSchema = new Schema({
     required: true,
   },
   lessons: [lessonSchema],
-});
+},  { timestamps: true } );
 
 export default mongoose.model("Course", courseSchema);
