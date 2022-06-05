@@ -3,7 +3,6 @@ import { nanoid } from "nanoid";
 import Course from "../models/course";
 import slugify from "slugify";
 import { readFileSync } from "fs";
-import { exec } from "child_process";
 
 const awsConfig = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -66,8 +65,6 @@ export const removeImage = async (req, res) => {
 };
 
 export const createCourse = async (req, res) => {
-  // console.log("COURSE CREATED", req.body);
-  // return;
   try {
     const alreadyExist = await Course.findOne({
       slug: slugify(req.body.name.toLowerCase()),
@@ -86,6 +83,24 @@ export const createCourse = async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(400).send("Course Creation Failed");
+  }
+};
+
+export const updateCourse = async (req, res) => {
+  try {
+    const slug = req.params;
+    const course = await Course.findOne(slug).exec();
+    if (req.user._id != course.instructor) {
+      return res.status(400).send("Unauthorized!");
+    }
+
+    const updated = await Course.findOneAndUpdate(slug, req.body, {
+      new: true,
+    }).exec();
+    res.json(updated);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send(err.message);
   }
 };
 
